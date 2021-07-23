@@ -1,14 +1,27 @@
 package lexer
 
 import (
-	"fmt"
-	"monkey/token"
+	"interpreter-go/token"
 	"testing"
 )
 
 type TokenTest struct {
 	expectedType    token.TokenType
 	expectedLiteral string
+}
+
+func verifyTokens(t *testing.T, lexer *Lexer, tests []TokenTest) {
+	for i, tt := range tests {
+		tok := lexer.NextToken()
+
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokenType wrong. Expected: %q | got: %q", i, tt.expectedType, tok.Type)
+		}
+
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong. Expected =%q, got=%q", i, tt.expectedLiteral, tok.Literal)
+		}
+	}
 }
 
 func TestNextToken(t *testing.T) {
@@ -27,18 +40,7 @@ func TestNextToken(t *testing.T) {
 	}
 
 	l := New(input)
-	for i, tt := range tests {
-		tok := l.nextToken()
-
-		if tok.Type != tt.expectedType {
-			t.Fatalf("tests[%d] - tokenType wrong. Expected: %q | got: %q", i, tt.expectedType, tok.Type)
-		}
-
-		if tok.Literal != tt.expectedLiteral {
-			t.Fatalf("tests[%d] - literal wrong. Expected =%q, got=%q", i, tt.expectedLiteral, tok.Literal)
-		}
-	}
-
+	verifyTokens(t, l, tests)
 }
 
 func TestNextToken2(t *testing.T) {
@@ -88,16 +90,55 @@ func TestNextToken2(t *testing.T) {
 	}
 
 	l := New(input)
-	for i, tt := range tests {
-		tok := l.nextToken()
-		fmt.Println(tok)
+	verifyTokens(t, l, tests)
+}
 
-		if tok.Type != tt.expectedType {
-			t.Fatalf("tests[%d] - tokenType wrong. Expected: %q | got: %q", i, tt.expectedType, tok.Type)
-		}
+func TestNextToken3(t *testing.T) {
+	input := `!-/*5
+			5 < 10 > 50
+			if (5 < 10) 
+				return true
+			else
+				return false
+			10 == 10
+			9 != 10`
 
-		if tok.Literal != tt.expectedLiteral {
-			t.Fatalf("tests[%d] - literal wrong. Expected =%q, got=%q", i, tt.expectedLiteral, tok.Literal)
-		}
+	tests := []TokenTest{
+		{token.BANG, "!"},
+		{token.MINUS, "-"},
+		{token.SLASH, "/"},
+		{token.ASTERISK, "*"},
+		{token.INT, "5"},
+
+		{token.INT, "5"},
+		{token.LT, "<"},
+		{token.INT, "10"},
+		{token.GT, ">"},
+		{token.INT, "50"},
+
+		{token.IF, "if"},
+		{token.LPAREN, "("},
+		{token.INT, "5"},
+		{token.LT, "<"},
+		{token.INT, "10"},
+		{token.RPAREN, ")"},
+		{token.RETURN, "return"},
+		{token.TRUE, "true"},
+		{token.ELSE, "else"},
+		{token.RETURN, "return"},
+		{token.FALSE, "false"},
+
+		{token.INT, "10"},
+		{token.EQ, "=="},
+		{token.INT, "10"},
+
+		{token.INT, "9"},
+		{token.NOT_EQ, "!="},
+		{token.INT, "10"},
+
+		{token.EOF, ""},
 	}
+
+	l := New(input)
+	verifyTokens(t, l, tests)
 }

@@ -1,6 +1,6 @@
 package lexer
 
-import "monkey/token"
+import "interpreter-go/token"
 
 type Lexer struct {
 	input        string
@@ -15,14 +15,50 @@ func New(input string) *Lexer {
 	return lexer
 }
 
-func (l *Lexer) nextToken() token.Token {
+func (l *Lexer) NextToken() token.Token {
 	var tk token.Token
 
 	l.skipWhitespace()
 
 	switch l.ch {
 	case '=':
-		tk = newToken(token.ASSIGN, l.ch)
+		{
+			if l.peekChar() == '=' {
+				ch := l.ch
+				l.readChar()
+				literal := string(ch) + string(l.ch)
+				tk = token.Token{Type: token.EQ, Literal: literal}
+			} else {
+				tk = newToken(token.ASSIGN, l.ch)
+			}
+		}
+	case '+':
+		tk = newToken(token.PLUS, l.ch)
+	case '-':
+		tk = newToken(token.MINUS, l.ch)
+	case '*':
+		tk = newToken(token.ASTERISK, l.ch)
+	case '/':
+		tk = newToken(token.SLASH, l.ch)
+	case '!':
+		{
+			if l.peekChar() == '=' {
+				ch := l.ch
+				l.readChar()
+				literal := string(ch) + string(l.ch)
+				tk = token.Token{Type: token.NOT_EQ, Literal: literal}
+			} else {
+				tk = newToken(token.BANG, l.ch)
+			}
+		}
+	case '<':
+		tk = newToken(token.LT, l.ch)
+	case '>':
+		tk = newToken(token.GT, l.ch)
+	case '{':
+		tk = newToken(token.LBRACE, l.ch)
+	case '}':
+		tk = newToken(token.RBRACE, l.ch)
 	case '(':
 		tk = newToken(token.LPAREN, l.ch)
 	case ')':
@@ -31,12 +67,6 @@ func (l *Lexer) nextToken() token.Token {
 		tk = newToken(token.SEMICOLON, l.ch)
 	case ',':
 		tk = newToken(token.COMMA, l.ch)
-	case '+':
-		tk = newToken(token.PLUS, l.ch)
-	case '{':
-		tk = newToken(token.LBRACE, l.ch)
-	case '}':
-		tk = newToken(token.RBRACE, l.ch)
 	case 0:
 		tk.Literal = ""
 		tk.Type = token.EOF
@@ -67,6 +97,14 @@ func (l *Lexer) readChar() {
 
 	l.position = l.readPosition
 	l.readPosition += 1
+}
+
+func (l *Lexer) peekChar() byte {
+	if l.readPosition >= len(l.input) {
+		return 0
+	} else {
+		return l.input[l.readPosition]
+	}
 }
 
 func (l *Lexer) readIdentifier() string {
