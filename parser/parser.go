@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"interpreter-go/ast"
 	"interpreter-go/lexer"
 	"interpreter-go/token"
@@ -10,15 +11,29 @@ type Parser struct {
 	lexer     *lexer.Lexer
 	curToken  token.Token
 	peekToken token.Token
+	errors    []string
 }
 
 func New(lexer *lexer.Lexer) *Parser {
-	p := &Parser{lexer: lexer}
+	p := &Parser{
+		lexer:  lexer,
+		errors: []string{},
+	}
 
 	p.nextToken()
 	p.nextToken()
 
 	return p
+}
+
+func (parser *Parser) Errors() []string {
+	return parser.errors
+}
+
+func (parser *Parser) peekError(t token.TokenType) {
+	message := fmt.Sprintf("Expected next token to be %s, got %s instead", t, parser.peekToken.Type)
+
+	parser.errors = append(parser.errors, message)
 }
 
 func (parser *Parser) nextToken() {
@@ -47,6 +62,8 @@ func (parser *Parser) parseStatement() ast.Statement {
 	switch parser.curToken.Type {
 	case token.LET:
 		return parser.parseLetStatement()
+	case token.RETURN:
+		return parser.parseReturnStatement()
 	default:
 		return nil
 	}
@@ -66,7 +83,19 @@ func (parser *Parser) parseLetStatement() *ast.LetStatement {
 	}
 
 	// TODO: skipping the expression until we encounter a semicolon
-	if !parser.curTokenIs(token.SEMICOLON) {
+	for !parser.curTokenIs(token.SEMICOLON) {
+		parser.nextToken()
+	}
+
+	return statement
+}
+
+func (parser *Parser) parseReturnStatement() *ast.ReturnStatement {
+	statement := &ast.ReturnStatement{Token: parser.curToken}
+
+	parser.nextToken()
+
+	for !parser.curTokenIs(token.SEMICOLON) {
 		parser.nextToken()
 	}
 
@@ -86,6 +115,7 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 		p.nextToken()
 		return true
 	} else {
+		p.peekError(t)
 		return false
 	}
 }
