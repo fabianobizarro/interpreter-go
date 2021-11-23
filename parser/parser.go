@@ -20,17 +20,17 @@ const (
 )
 
 type Parser struct {
-	lexer           *lexer.Lexer
-	curToken        token.Token
-	peekToken       token.Token
-	errors          []string
-	prefrixParseFns map[token.TokenType]prefrixParseFn
-	infixParseFns   map[token.TokenType]infixParseFn
+	lexer          *lexer.Lexer
+	curToken       token.Token
+	peekToken      token.Token
+	errors         []string
+	prefixParseFns map[token.TokenType]prefixParseFn
+	infixParseFns  map[token.TokenType]infixParseFn
 }
 
 type (
-	prefrixParseFn func() ast.Expression
-	infixParseFn   func(ast.Expression) ast.Expression
+	prefixParseFn func() ast.Expression
+	infixParseFn  func(ast.Expression) ast.Expression
 )
 
 var precedences = map[token.TokenType]int{
@@ -46,10 +46,10 @@ var precedences = map[token.TokenType]int{
 
 func New(lexer *lexer.Lexer) *Parser {
 	p := &Parser{
-		lexer:           lexer,
-		errors:          []string{},
-		prefrixParseFns: make(map[token.TokenType]prefrixParseFn),
-		infixParseFns:   make(map[token.TokenType]infixParseFn),
+		lexer:          lexer,
+		errors:         []string{},
+		prefixParseFns: make(map[token.TokenType]prefixParseFn),
+		infixParseFns:  make(map[token.TokenType]infixParseFn),
 	}
 
 	p.registerPrefix(token.IDENT, p.parseIdentifier)
@@ -165,7 +165,7 @@ func (parser *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 }
 
 func (parser *Parser) parseExpression(precedence int) ast.Expression {
-	prefix := parser.prefrixParseFns[parser.curToken.Type]
+	prefix := parser.prefixParseFns[parser.curToken.Type]
 
 	if prefix == nil {
 		parser.noPrefixParseFnError(parser.curToken.Type)
@@ -205,8 +205,8 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 	}
 }
 
-func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefrixParseFn) {
-	p.prefrixParseFns[tokenType] = fn
+func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
+	p.prefixParseFns[tokenType] = fn
 }
 
 func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
