@@ -102,6 +102,8 @@ func testLiteralExpression(t *testing.T, exp ast.Expression, expected interface{
 		return testIntegerLiteral(t, exp, v)
 	case string:
 		return testIdentifier(t, exp, v)
+	case bool:
+		return testBooleanLiteral(t, exp, v)
 	}
 
 	t.Errorf("type of exp not handled. got=%T", exp)
@@ -213,7 +215,6 @@ func TestIdentifierExpression(t *testing.T) {
 	if ident.TokenLiteral() != "foobar" {
 		t.Errorf("ident.TokenLiteral not %s. got=%s", "foobar", ident.TokenLiteral())
 	}
-
 }
 
 func TestIntegerLiteralExpression(t *testing.T) {
@@ -456,17 +457,27 @@ func TestBooleanExpression(t *testing.T) {
 		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
 	}
 
-	literal, ok := stmt.Expression.(*ast.Boolean)
+	testBooleanLiteral(t, stmt.Expression, true)
+}
+
+func testBooleanLiteral(t *testing.T, exp ast.Expression, value bool) bool {
+
+	bo, ok := exp.(*ast.Boolean)
 
 	if !ok {
-		t.Fatalf("exp not *ast.Boolean. got=%T", stmt.Expression)
+		t.Errorf("exp not *ast.Boolean. got=%T", exp)
+		return false
 	}
 
-	if literal.Value != true {
-		t.Errorf("literal.Value not %t. got=%t", true, literal.Value)
+	if bo.Value != value {
+		t.Errorf("bo.Value not %t. got=%t", value, bo.Value)
+		return false
 	}
 
-	if literal.TokenLiteral() != "true" {
-		t.Errorf("literal.TokenLiteral not %s. got=%s", "true", literal.TokenLiteral())
+	if bo.TokenLiteral() != fmt.Sprintf("%t", value) {
+		t.Errorf("bo.TokenLiteral not %t. got=%s", value, bo.TokenLiteral())
+		return false
 	}
+
+	return true
 }
